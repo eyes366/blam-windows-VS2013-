@@ -16,6 +16,7 @@
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/visualization/cloud_viewer.h>
 #include<string>
+#include <fstream>
 #include"common.h"
 
 
@@ -49,6 +50,9 @@ public:
   LaserLoopClosure loop_closure_;
   PointCloudLocalization localization_;
   PointCloudMapper mapper_;
+  std::ofstream m_Log;
+  std::string m_szLogPath;
+  std::ofstream m_fInterMediaFilePath;
 };
 
 #endif

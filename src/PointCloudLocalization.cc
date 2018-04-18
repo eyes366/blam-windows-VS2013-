@@ -126,6 +126,8 @@ bool PointCloudLocalization::TransformPointsToSensorFrame(
   return true;
 }
 
+#include <ctime>
+
 bool PointCloudLocalization::MeasurementUpdate(const PointCloud::Ptr& query,
                                                const PointCloud::Ptr& reference,
                                                PointCloud* aligned_query) {
@@ -149,7 +151,10 @@ bool PointCloudLocalization::MeasurementUpdate(const PointCloud::Ptr& query,
   icp.setInputTarget(reference);
 
   PointCloud unused;
+  clock_t t0 = clock();
   icp.align(unused);
+  clock_t t1 = clock();
+//  cout << "Filter" << (double)(t1 - t0) / CLOCKS_PER_SEC << "s Point:" << query->size() << ":" << reference->size() << endl;
 
   // Retrieve transformation and estimate and update.
   const Eigen::Matrix4f T = icp.getFinalTransformation();
@@ -165,7 +170,7 @@ bool PointCloudLocalization::MeasurementUpdate(const PointCloud::Ptr& query,
   if (!transform_thresholding_ ||
       (pose_update.translation.Norm() <= max_translation_ &&
        pose_update.rotation.ToEulerZYX().Norm() <= max_rotation_)) {
-    incremental_estimate_ = gu::PoseUpdate(incremental_estimate_, pose_update);
+    incremental_estimate_ = gu::PoseUpdate(incremental_estimate_, pose_update);//如果增量合法，则更新incremental_estimate_
   } else {
   
   }

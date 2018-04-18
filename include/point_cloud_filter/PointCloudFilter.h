@@ -3,6 +3,8 @@
 
 //#include <ros/ros.h>
 //#include <pcl_ros/point_cloud.h>
+#include <iostream>
+#include <fstream>
 #include <pcl\filters\random_sample.h>
 #include"common.h"
 
@@ -17,7 +19,7 @@ class PointCloudFilter {
 
   // Filter an incoming point cloud
   bool Filter(const PointCloud::ConstPtr& points,
-              PointCloud::Ptr points_filtered) const;
+              PointCloud::Ptr points_filtered) /*const*/;
 
  private:
   // Node initialization.
@@ -25,6 +27,8 @@ class PointCloudFilter {
 
   // The node's name.
   std::string name_;
+
+  std::ofstream m_Log;
 
   struct Parameters {
     // Apply a voxel grid filter.

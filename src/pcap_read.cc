@@ -3,6 +3,8 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/math/special_functions.hpp>
+#include <boost/math/special_functions/fpclassify.hpp>
 #ifdef _MSC_VER
 # include <boost/cstdint.hpp>
 typedef boost::uint8_t uint8_t;
@@ -603,6 +605,14 @@ void MyHdlGrabber::PushFiringData(const unsigned char laserId,
 	dat.Intensity = laserReturn->intensity;
 	dat.Distance = distanceM;
 
+// 	if (boost::math::isnan(dat.xyz[0]) || boost::math::isnan(dat.xyz[1]) || boost::math::isnan(dat.xyz[2]))
+// 	{
+// 		return;
+// 	}
+// 	if (abs(dat.xyz[0]) > 100.0 || abs(dat.xyz[1]) > 100.0 || abs(dat.xyz[2]) > 100.0)
+// 	{
+// 		return;
+// 	}
 	Points.push_back(dat);
 	//this->Azimuth->InsertNextValue(azimuth);
 	//this->Intensity->InsertNextValue(laserReturn->intensity);
@@ -803,9 +813,11 @@ bool MyHdlGrabber::GetFrame(int frameNumber)
 	Reader->SetFilePosition(&FilePositions[frameNumber]);
 	Skip = Skips[frameNumber];
 
+	int aaa = 0;
 	while (Reader->NextPacket(data, dataLength, timeSinceStart))
 	{
 		ProcessHDLPacket(const_cast<unsigned char*>(data), dataLength);
+//		std::cout << "aaa:" << aaa++ << std::endl;
 
 		if (endFrame)
 		{

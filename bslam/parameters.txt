@@ -1,3 +1,4 @@
+pcap_file_path=E:\MyData\data20180410\0.pcap
 
 fixed=world
 base=base
@@ -35,7 +36,8 @@ radius=0.15
 radius_knn=3
 
  
-octree_resolution=0.05
+#octree_resolution=0.05
+octree_resolution=0.2
  
 # Stop ICP if the transformation from the last iteration was this small.
 tf_epsilon=0.0000000001
@@ -64,11 +66,13 @@ relinearize_threshold=0.01
 # Amount of translational distance the sensor must travel before adding a new
 # pose to the pose graph. This helps keep the graph sparse so that loop closures
 # are fast.
-translation_threshold=0.5
+#translation_threshold=0.5
+translation_threshold=1.0
 
 # When searching through old poses for loop closures, only consider old poses
 # that are within this distance of the current pose.
-proximity_threshold=1.5
+#proximity_threshold=1.5
+proximity_threshold=10.0
 
 # To compute a loop closure we perform ICP between the current scan and laser
 # scans captured from nearby poses. In order to be considered a loop closure,
@@ -77,12 +81,14 @@ max_tolerable_fitness=0.15
 
 # Don't attempt loop closures with poses in the graph that were collected within
 # the last 'skip_recent_poses' poses.
-skip_recent_poses=40
+#skip_recent_poses=40
+skip_recent_poses=400
 
 # If a loop has recently been closed, don't close a new one for at least this
 # many poses (i.e. the sensor would have to move translation_threshold *
 # poses_before_reclosing meters in order to close a new loop).
-poses_before_reclosing=40
+#poses_before_reclosing=40
+poses_before_reclosing=200
 
 #<!-- Initial pose -->
 position_x=0.0

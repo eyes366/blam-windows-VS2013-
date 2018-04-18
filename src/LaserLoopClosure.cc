@@ -21,7 +21,10 @@ using gtsam::Vector3;
 using gtsam::Vector6;
 
 LaserLoopClosure::LaserLoopClosure()
-    : key_(0), last_closure_key_(std::numeric_limits<int>::min()) {}
+    : key_(0), last_closure_key_(std::numeric_limits<int>::min()) 
+{
+	m_Log.open("LaserLoopClosure.log");
+}
 
 LaserLoopClosure::~LaserLoopClosure() {}
 
@@ -145,6 +148,16 @@ bool LaserLoopClosure::AddBetweenFactor(
   isam_->update(new_factor, new_value);
   values_ = isam_->calculateEstimate();
 
+  Pose3 pose_now = values_.at<Pose3>(key_);
+  pcl::PointXYZRGB pt;
+  pt.x = float(pose_now.translation().x());
+  pt.y = float(pose_now.translation().y());
+  pt.z = float(pose_now.translation().z());
+  pt.r = 255;
+  pt.g = 0;
+  pt.b = 0;
+  m_track.push_back(pt);
+
   // Assign output and get ready to go again!
   *key = key_++;
 
@@ -176,7 +189,11 @@ bool LaserLoopClosure::AddKeyScanPair(unsigned int key,
 
 bool LaserLoopClosure::FindLoopClosures(
     unsigned int key, std::vector<unsigned int>* closure_keys) {
+	m_Log << "Start Find loop" << endl;
+	m_Log.flush();
 
+	m_closureCondidates.clear();
+	m_closureValid.clear();
 
   if (!check_for_loop_closures_)
     return false;
@@ -195,7 +212,7 @@ bool LaserLoopClosure::FindLoopClosures(
   bool closed_loop = false;
   for (const auto& keyed_pose : values_) {
     const unsigned int other_key = keyed_pose.key;
-
+	
     if (other_key == key)
       continue;
 
@@ -207,26 +224,96 @@ bool LaserLoopClosure::FindLoopClosures(
 
     const gu::Transform3 pose2 = ToGu(values_.at<Pose3>(other_key));
     const gu::Transform3 difference = gu::PoseDelta(pose1, pose2);
-    if (difference.translation.Norm() < proximity_threshold_) {
+// 	cout << "xxxxxxxxxxxxxxxxx" << endl;
+// 	cout << "key:" << key << endl;
+    if (difference.translation.Norm() < proximity_threshold_) 
+	{
+//		cout << "other_key:" << other_key << endl;
       const PointCloud::ConstPtr scan2 = keyed_scans_[other_key];
 
       gu::Transform3 delta;
       LaserLoopClosure::Mat66 covariance;
-      if (PerformICP(scan1, scan2, pose1, pose2, &delta, &covariance)) {
+      if (PerformICP(scan1, scan2, pose1, pose2, &delta, &covariance)) 
+	  {
+		  m_Log << "Loop:" << other_key << endl;
+		  m_Log.flush();
         NonlinearFactorGraph new_factor;
         new_factor.add(BetweenFactor<Pose3>(key, other_key, ToGtsam(delta),
                                             ToGtsam(covariance)));
+		m_Log << "update start:" << other_key << endl;
+		m_Log.flush();
+		m_Log << "value exist: " << key << ":" << isam_->valueExists(key) << endl;
+		m_Log << "value exist: " << other_key << ":" << isam_->valueExists(other_key) << endl;
+// 		string sssss;
+// 		Values values = isam_->getLinearizationPoint();
+// 		values.print(sssss);
+
+//		getchar();
         isam_->update(new_factor, Values());
+		m_Log << "update end:" << other_key << endl;
+		m_Log.flush();
         closed_loop = true;
         last_closure_key_ = key;
 
         loop_edges_.push_back(std::make_pair(key, other_key));
         closure_keys->push_back(other_key);
 
+// 		pcl::PointXYZRGB pt_;
+// 		pt_.x = pose2.translation(0);
+// 		pt_.y = pose2.translation(1);
+// 		pt_.z = pose2.translation(2);
+// 		pt_.g = 255.0;
+// 		m_closureValid.push_back(pt_);
       }
+	  pcl::PointXYZRGB pt_;
+	  pt_.x = pose2.translation(0);
+	  pt_.y = pose2.translation(1);
+	  pt_.z = pose2.translation(2);
+	  pt_.b = 255.0;
+	  m_closureCondidates.push_back(pt_);
     }
   }
+  m_Log << "calculateEstimate: start" << endl;
+  m_Log.flush();
   values_ = isam_->calculateEstimate();
+  m_Log << "calculateEstimate: end" << endl;
+  m_Log.flush();
+
+  if (closed_loop)
+  {
+	  m_track.clear();
+	  for (const auto& keyed_pose : values_) 
+	  {
+		  const unsigned int key = keyed_pose.key;
+
+		  if (!keyed_scans_.count(key))
+			  continue;
+
+		  Pose3 pose_now = values_.at<Pose3>(key);
+		  pcl::PointXYZRGB pt;
+		  pt.x = float(pose_now.translation().x());
+		  pt.y = float(pose_now.translation().y());
+		  pt.z = float(pose_now.translation().z());
+		  pt.r = 255;
+		  pt.g = 0;
+		  pt.b = 0;
+		  m_track.push_back(pt);
+	  }
+	  m_LoopLines.clear();
+	  for (unsigned int i = 0; i < loop_edges_.size(); i++)
+	  {
+		  const gu::Transform3 pose1 = ToGu(values_.at<Pose3>(loop_edges_[i].first));
+		  const gu::Transform3 pose2 = ToGu(values_.at<Pose3>(loop_edges_[i].second));
+		  pcl::PointXYZ pt0, pt1;
+		  pt0.x = pose1.translation(0);
+		  pt0.y = pose1.translation(1);
+		  pt0.z = pose1.translation(2);
+		  pt1.x = pose2.translation(0);
+		  pt1.y = pose2.translation(1);
+		  pt1.z = pose2.translation(2);
+		  m_LoopLines.push_back(std::make_pair(pt0, pt1));
+	  }
+  }
 
   return closed_loop;
 }
@@ -261,6 +348,11 @@ gu::Transform3 LaserLoopClosure::GetLastPose() const {
   } else {
     return ToGu(values_.at<Pose3>(0));
   }
+}
+
+pcl::PointCloud<pcl::PointXYZRGB>::Ptr LaserLoopClosure::GetTrack()
+{
+	return m_track.makeShared();
 }
 
 gu::Transform3 LaserLoopClosure::ToGu(const Pose3& pose) const {
@@ -375,7 +467,11 @@ bool LaserLoopClosure::PerformICP(const PointCloud::ConstPtr& scan1,
 
   if (!icp.hasConverged())
     return false;
-  std::cout << "getFitnessScore: " << icp.getFitnessScore() << "     " << max_tolerable_fitness_ << std::endl;
+  stringstream ss;
+  ss << "getFitnessScore: " << icp.getFitnessScore() << "     " << max_tolerable_fitness_ << std::endl;
+  std::cout << ss.str();
+  m_Log << ss.str();
+  m_Log.flush();
   if (icp.getFitnessScore() > max_tolerable_fitness_) {
     return false;
   }
@@ -385,6 +481,8 @@ bool LaserLoopClosure::PerformICP(const PointCloud::ConstPtr& scan1,
                      gu::PoseUpdate(gu::PoseInverse(delta_icp), pose1));
 
   *delta = gu::PoseUpdate(update, gu::PoseDelta(pose1, pose2));
+  m_Log << *delta << endl;
+  m_Log.flush();
 
   covariance->Zeros();
   for (int i = 0; i < 3; ++i)

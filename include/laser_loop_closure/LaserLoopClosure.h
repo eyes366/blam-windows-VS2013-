@@ -16,9 +16,12 @@
 #include <gtsam/slam/BetweenFactor.h>
 
 #include <point_cloud_filter/PointCloudFilter.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
 
 #include <map>
 #include <vector>
+#include <fstream>
 #include"common.h"
 
 class LaserLoopClosure {
@@ -37,6 +40,8 @@ class LaserLoopClosure {
   void GetMaximumLikelihoodPoints(PointCloud* map);
   geometry_utils::Transform3 GetLastPose() const;
   void PublishPoseGraph();
+
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr GetTrack();
 
  private:
   bool LoadParameters();
@@ -100,6 +105,16 @@ class LaserLoopClosure {
 
   // For filtering laser scans prior to ICP.
   PointCloudFilter filter_;
+
+public:
+	typedef std::pair<pcl::PointXYZ, pcl::PointXYZ> ConstraitLine;
+
+	std::vector<ConstraitLine> m_LoopLines;
+
+  pcl::PointCloud<pcl::PointXYZRGB> m_track;
+  pcl::PointCloud<pcl::PointXYZRGB> m_closureCondidates;
+  pcl::PointCloud<pcl::PointXYZRGB> m_closureValid;
+  std::ofstream m_Log;
 };
 
 #endif
