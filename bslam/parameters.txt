@@ -1,4 +1,4 @@
-pcap_file_path=E:\MyData\data20180410\0.pcap
+pcap_file_path=D:\MyData\20180201\0.pcap
 
 fixed=world
 base=base
@@ -38,6 +38,10 @@ radius_knn=3
  
 #octree_resolution=0.05
 octree_resolution=0.2
+
+# If old pose out of "local_map_integrate_distance", its cloud points will be dropped from local map
+# If local_map_integrate_distance<0, No cloud point will be dropped
+local_map_integrate_distance=50.0
  
 # Stop ICP if the transformation from the last iteration was this small.
 tf_epsilon=0.0000000001
@@ -57,7 +61,7 @@ max_rotation=0.1
   
   # Toggle loop closures on or off. Setting this to off will increase run-time
 # speed by a small fraction.
-check_for_loop_closures=1
+check_for_loop_closures=0
 
 # Default parameters for the ISAM2 data structure.
 relinearize_skip=1
@@ -72,12 +76,13 @@ translation_threshold=1.0
 # When searching through old poses for loop closures, only consider old poses
 # that are within this distance of the current pose.
 #proximity_threshold=1.5
-proximity_threshold=10.0
+proximity_threshold=3.0
 
 # To compute a loop closure we perform ICP between the current scan and laser
 # scans captured from nearby poses. In order to be considered a loop closure,
 # the ICP "fitness score" must be less than this number.
-max_tolerable_fitness=0.15
+#max_tolerable_fitness=0.15
+max_tolerable_fitness=1.0
 
 # Don't attempt loop closures with poses in the graph that were collected within
 # the last 'skip_recent_poses' poses.

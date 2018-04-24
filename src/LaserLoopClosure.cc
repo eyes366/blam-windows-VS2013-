@@ -46,6 +46,7 @@ bool LaserLoopClosure::LoadParameters() {
 	base_frame_id_ = pd.getData("base");
 
 	check_for_loop_closures_ = atoi(pd.getData("check_for_loop_closures").c_str());
+	cout << "check_for_loop_closures_:" << check_for_loop_closures_ << endl;
 	// Load ISAM2 parameters.
 	unsigned int relinearize_skip = 1;
 	double relinearize_threshold = 0.01;

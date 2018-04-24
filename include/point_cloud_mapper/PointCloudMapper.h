@@ -7,6 +7,7 @@
 
 #include <mutex>
 #include <thread>
+#include <queue>
 #include"common.h"
 
 class PointCloudMapper {
@@ -61,7 +62,12 @@ class PointCloudMapper {
   mutable std::mutex map_mutex_;
 
 public:
+	double translation_threshold_;
 	PointCloud::Ptr map_data_;
+	boost::shared_ptr<std::vector<int> > map_data_list_;
+	std::queue<int> map_data_list_info_;
+	void TrimData();
+	double local_map_integrate_distance_;
 };
 
 #endif
